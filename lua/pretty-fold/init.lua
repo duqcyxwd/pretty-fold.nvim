@@ -96,6 +96,7 @@ local function fold_text(config)
 
    r.expansion_str = string.rep(config.fill_char, visible_win_width - fold_text_len)
 
+   -- print(table.concat( vim.tbl_flatten({r.left, r.expansion_str, r.right}) ))
    return table.concat( vim.tbl_flatten({r.left, r.expansion_str, r.right}) )
 end
 
@@ -176,10 +177,23 @@ end
 ---@param filetype string
 ---@param config table
 function M.ft_setup(filetype, config)
+
+   local count = 0
+   local options = {
+      bufnr = function () return vim.api.nvim_get_current_buf() end,
+      key = function () return vim.api.nvim_get_current_buf() .. "_" .. vim.v.foldstart end
+   }
+   local cache_fn = require("funcs.nvim_utility").memoize_by_buf_tick(fold_text, options)
+   local fold_text_cache = function()
+      return cache_fn(config)
+   end
+
    if not M.foldtext[filetype] then
       config = configure(config)
       -- M.config[filetype] = config
-      M.foldtext[filetype] = function() return fold_text(config) end
+      -- M.foldtext[filetype] = function() return fold_text(config) end
+      M.foldtext[filetype] = fold_text_cache
+
    end
 end
 
